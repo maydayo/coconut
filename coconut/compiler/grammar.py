@@ -1171,9 +1171,10 @@ class Grammar(object):
         # we include (var)arg_comma to ensure the pattern matches the whole arg
         arg_comma = comma | fixto(FollowedBy(rparen), "")
         setarg_comma = arg_comma | fixto(FollowedBy(colon), "")
-        typedef_ref = setname + colon.suppress() + typedef_test + arg_comma
+        arg_typedef = condense(dubstar + typedef_test) | typedef_test
+        typedef_ref = setname + colon.suppress() + arg_typedef + arg_comma
         default = condense(equals + test)
-        unsafe_typedef_default_ref = setname + colon.suppress() + typedef_test + Optional(default)
+        unsafe_typedef_default_ref = setname + colon.suppress() + arg_typedef + Optional(default)
         typedef_default_ref = unsafe_typedef_default_ref + arg_comma
         tfpdef = condense(setname + arg_comma) | typedef
         tfpdef_default = condense(setname + Optional(default) + arg_comma) | typedef_default
