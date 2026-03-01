@@ -33,6 +33,7 @@ else:
 import pytest
 
 from coconut.util import noop_ctx, get_target_info
+from coconut.exceptions import CoconutStyleError
 from coconut.terminal import (
     logger,
     LoggingStringIO,
@@ -75,6 +76,8 @@ from coconut.constants import (
 
 from coconut.api import (
     auto_compilation,
+    get_state,
+    parse,
     setup,
 )
 
@@ -915,6 +918,23 @@ class TestShell(unittest.TestCase):
 
     def test_api(self):
         call_python(["-c", 'from coconut.api import parse; exec(parse("' + coconut_snip + '"))'], assert_output=True)
+
+    def test_strict_unreachable_after_return(self):
+        state = get_state(None)
+        setup(line_numbers=False, strict=True, state=state)
+        with pytest.raises(CoconutStyleError) as exc_info:
+            parse("""def func():
+    x = 1
+    return x
+    x = 2
+""", mode="file", state=state)
+        assert "unreachable code after return" in str(exc_info.value)
+        parse("""def func(cond):
+    if cond:
+        return 1
+    x = 2
+    return x
+""", mode="file", state=state)
 
     def test_import_hook(self):
         with using_sys_path(src):
