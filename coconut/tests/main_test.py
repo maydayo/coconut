@@ -916,6 +916,9 @@ class TestShell(unittest.TestCase):
     def test_api(self):
         call_python(["-c", 'from coconut.api import parse; exec(parse("' + coconut_snip + '"))'], assert_output=True)
 
+    def test_kwargs_unpack_annotation(self):
+        call_python(["-c", "from coconut.api import parse; compiled = parse('def f(**kwargs: **D):\\n    pass\\n', mode='file'); assert '_coconut.typing.Unpack[D]' in compiled, compiled; print('<success>')"], assert_output=True)
+
     def test_import_hook(self):
         with using_sys_path(src):
             with using_paths(runnable_compiled_loc, importable_compiled_loc):

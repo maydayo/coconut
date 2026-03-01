@@ -4530,6 +4530,8 @@ def {builder_name}({expr_setnames_str}):
                 varname, typedef, default, comma = tokens
             else:
                 raise CoconutInternalException("invalid type annotation tokens", tokens)
+            if typedef.startswith("**"):
+                typedef = "_coconut.typing.Unpack[" + typedef[2:].strip() + "]"
             if self.target.startswith("3"):
                 return varname + ": " + self.wrap_typedef(typedef, for_py_typedef=True) + default + comma
             else:
