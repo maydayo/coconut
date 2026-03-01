@@ -2485,6 +2485,49 @@ else:
 
         return False
 
+    def line_loc_from_offset(self, original, loc, line_offset):
+        """Move loc forward by line_offset lines in original."""
+        for _ in range(line_offset):
+            next_newline = original.find("\n", loc)
+            if next_newline == -1:
+                break
+            loc = next_newline + 1
+        return loc
+
+    def check_unreachable_after_return(self, original, loc, raw_lines):
+        """Strict-check known unreachable lines after return statements."""
+        level = 0  # indentation level
+        func_until_level = None  # whether inside of an inner function
+        unreachable_levels = set()  # levels that had a return in this block
+
+        # normalize_indent_markers is required for func_until_level to work
+        for i, line in enumerate(normalize_indent_markers(raw_lines)):
+            indent, _body, dedent = split_leading_trailing_indent(line)
+            base, _comment = split_comment(_body)
+
+            level += ind_change(indent)
+
+            # update func_until_level
+            if func_until_level is not None and level <= func_until_level:
+                func_until_level = None
+
+            # detect inner functions
+            if func_until_level is None and self.def_regex.match(base):
+                func_until_level = level
+
+            if func_until_level is None:
+                stripped = base.strip()
+
+                if level in unreachable_levels and stripped:
+                    self.strict_qa_error("found unreachable code after return", original, self.line_loc_from_offset(original, loc, i + 1), endpoint=False)
+                    unreachable_levels.remove(level)
+
+                if stripped and self.return_regex.match(stripped):
+                    unreachable_levels.add(level)
+
+            level += ind_change(dedent)
+            unreachable_levels = set(unreachable_level for unreachable_level in unreachable_levels if unreachable_level <= level)
+
     def transform_returns(self, original, loc, raw_lines, tre_return_grammar=None, is_async=False, is_gen=False):
         """Apply TCO, TRE, async, and generator return universalization to the given function."""
         lines = []  # transformed lines
@@ -2739,6 +2782,9 @@ except _coconut.NameError:
 
         # detect generators
         is_gen = self.detect_is_gen(raw_lines)
+
+        # detect known unreachable code
+        self.check_unreachable_after_return(original, loc, raw_lines)
 
         # handle async functions
         if is_async:
