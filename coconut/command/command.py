@@ -243,6 +243,7 @@ class Command(object):
                 quiet=args.quiet,
                 verbose=args.verbose,
                 tracing=args.trace,
+                silence_warnings=args.silence_warnings,
             )
             if args.trace or args.profile:
                 unset_fast_pyparsing_reprs()

@@ -122,7 +122,7 @@ depth: 1
 
 ```
 coconut [-h] [--and source [dest ...]] [-v] [-t version] [-i] [-p] [-a] [-l]
-        [--no-line-numbers] [-k] [-w] [-r] [-n] [-d] [-q] [-s] [--no-tco] [--no-wrap-types]
+        [--no-line-numbers] [-k] [-w] [-r] [-n] [-d] [-q] [--silence-warnings regex] [-s] [--no-tco] [--no-wrap-types]
         [-c code] [-j processes] [-f] [--minify] [--jupyter ...] [--mypy ...] [--pyright]
         [--argv ...] [--tutorial] [--docs] [--style name] [--vi-mode]
         [--recursion-limit limit] [--stack-size kbs] [--fail-fast] [--no-cache]
@@ -168,6 +168,8 @@ dest                destination directory for compiled files (defaults to
 -d, --display         print compiled Python
 -q, --quiet           suppress all informational output (combine with --display to write
                       runnable code to stdout)
+--silence-warnings regex
+                      suppress warnings that match the given regex
 -s, --strict          enforce code cleanliness standards
 --no-tco, --notco     disable tail call optimization
 --no-wrap-types, --nowraptypes

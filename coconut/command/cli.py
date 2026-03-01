@@ -159,6 +159,13 @@ arguments.add_argument(
 )
 
 arguments.add_argument(
+    "--silence-warnings",
+    metavar="regex",
+    type=str,
+    help="suppress warnings that match the given regex",
+)
+
+arguments.add_argument(
     "-s", "--strict",
     action="store_true",
     help="enforce code cleanliness standards",

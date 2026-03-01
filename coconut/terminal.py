@@ -21,6 +21,7 @@ from coconut.root import *  # NOQA
 
 import sys
 import os
+import re
 import traceback
 import logging
 from contextlib import contextmanager
@@ -212,6 +213,7 @@ class Logger(object):
     name = None
     tracing = False
     trace_ind = 0
+    silence_warnings = None
 
     recorded_stats = defaultdict(lambda: [0, 0])
 
@@ -237,7 +239,7 @@ class Logger(object):
 
     def copy_from(self, other):
         """Copy other onto self."""
-        self.verbose, self.quiet, self.path, self.name, self.tracing, self.trace_ind = other.verbose, other.quiet, other.path, other.name, other.tracing, other.trace_ind
+        self.verbose, self.quiet, self.path, self.name, self.tracing, self.trace_ind, self.silence_warnings = other.verbose, other.quiet, other.path, other.name, other.tracing, other.trace_ind, other.silence_warnings
 
     def reset(self):
         """Completely reset the logger."""
@@ -247,7 +249,7 @@ class Logger(object):
         """Make a copy of the logger."""
         return Logger(self)
 
-    def setup(self, quiet=None, verbose=None, tracing=None):
+    def setup(self, quiet=None, verbose=None, tracing=None, silence_warnings=None):
         """Set up the logger with the given parameters."""
         if quiet is not None:
             self.quiet = quiet
@@ -255,6 +257,13 @@ class Logger(object):
             self.verbose = verbose
         if tracing is not None:
             self.tracing = tracing
+        if silence_warnings is None:
+            self.silence_warnings = None
+        else:
+            try:
+                self.silence_warnings = re.compile(silence_warnings)
+            except re.error as err:
+                raise CoconutException("invalid --silence-warnings regex", silence_warnings, extra=str(err))
         ParserElement.verbose_stacktrace = self.verbose
 
     def display(
@@ -433,6 +442,11 @@ class Logger(object):
 
     def warn_err(self, warning, force=False):
         """Displays a warning."""
+        if not force and self.silence_warnings is not None:
+            warning_msg = format_error(warning)
+            if self.silence_warnings.search(warning_msg):
+                self.log("Silenced warning:", warning_msg)
+                return
         if not self.quiet or force:
             try:
                 raise warning
